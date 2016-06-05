@@ -10,35 +10,170 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Synopsis
-
------------------------ TODO
-
+With this report we analyze the concequences of different weather events on the health of the population and the econcomy in the U.S. The NOAA has monitored data about weather events from 1950 till 2011. This data will be used to do our investigation. 
+In order to determine the health concequences on the population we focus on injuries and fatalities from which we can conclude that Tornado's and excessive heat are primary cause of fatalities and Tornado's and TSTM winds for injuries.
+As far as the economic damages go the flood and hurricane are the two events causing the most damages to the economy.
 
 ## Introduction
 The research that is described in this document is the exploration of the NOAA Storm database in light to answers some questions about severe weather events.
 Following questions are asked in regard to the Storm events and will be answered during the course
 of this document:
 
-- Across the United States, which types of events (as indicated in the ???????????????????????? variable) are most harmful with respect to population health?
+- Across the United States, which types of events (as indicated in the 𝙴𝚅𝚃𝚈𝙿𝙴 variable) are most harmful with respect to population health?
 - Across the United States, which types of events have the greatest economic consequences?
 
+## Data
+The data for this research come in the form of a comma-separated-value file compressed via the bzip2 algorithm to reduce its size. 
+[The data for the NOOA storm research can be download by clicking here](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2)
 
-## R Markdown
+The data has been provided to us by [Coursera](www.coursera.org)
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+Further documentation of the dataset is provided to us by the [National Weather Service](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf).
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+## Data Processing
+```{r echo=TRUE, cache=TRUE}
+library(knitr)
+library(ggplot2)
+library(reshape2)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+###  Obtaining and loading
+We load the encrypted NOAA Storm dataset. Due to amount of time it takes to load this dataset we cache this operation.
+```{r echo=TRUE, cache=TRUE}
+data.storm <- read.csv("repdata-data-StormData.csv.bz2")
+dim(data.storm)
+str(data.storm)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r echo=TRUE}
+data.storm$YEAR <- as.numeric(format(as.Date(data.storm$BGN_DATE, format = "%m/%d/%Y %H:%M:%S"), "%Y"))
+```
+
+### Most harmfull events
+As based on the provided documentation we consider injuries and fatalities as harmfull. By this we combine injuries and fatalities by event type. So following columns are relevant to answer this question
+
+Column        | Description
+------------- | -------------
+YEAR          | Year in which the event to place
+EVTYPE        | The event type
+INJURIES      | Number of registered injuries for this event
+FATALITIES    | Number of registered fatalities for this event
+
+The number of fatilities by event type is represented in data.fatalities along we with it's total. 
+```{r echo=TRUE}
+data.fatalities <- aggregate(data.storm$FATALITIES, by =list(EventType=data.storm$EVTYPE) , FUN =sum)
+sum(data.fatalities$x)
+```
+
+The number of injuries by event type is represented in data.injuries along we with it's total.
+```{r echo=TRUE}
+data.injuries <- aggregate(data.storm$INJURIES, by =list(EventType=data.storm$EVTYPE) , FUN =sum)
+sum(data.injuries$x)
+```
+
+The number of harmfull (injuries and fatalities) by event type is represented in data.harmfull along we with it's total.
+```{r echo=TRUE}
+data.harmfull <- rbind(data.injuries,data.fatalities)
+sum(data.harmfull$x)
+```
+
+Now we plot the number of harmfull events. As you can see around 1993 the injuries and fatalities have increased dramatacally.On one
+hand this could be due to faulty records before this period or since 1993 their has been an increase in catastrophic events.
+```{r echo=TRUE}
+hist(data.storm$YEAR, xlab = "Year", main = "Number of events by year")
+```
+
+### Economic consequences
+First we process our data which are relevant to determine the economic consequences. The property and crop values are deterministic for the economic concequences.
+We require following columns to determine the economic consequences.
+
+| Column        | Description   | 
+| ------------- | ------------- | 
+| YEAR          | Year in which the event to place |
+| EVTYPE        | The event type | 
+| PROPDMG       | Registered property damage in numbers | 
+| PROPDMGEXP    | Expressed value of PROPDMG - Hundred (H), Thousand (T), Million (M), Billion (B) | 
+| CROPDMG       | Registered crops damage in numbers | 
+| CROPDMGEXP    | Expressed value of CROPDMG - Hundred (H), Thousand (T), Million (M), Billion (B) | 
+
+As the property and crop damagages are expressed in different exponents we have to express all the values in one unit. Here follows a list of the different units for property and crops.
+```{r echo=TRUE}
+levels(data.storm$PROPDMGEXP)
+levels(data.storm$CROPDMGEXP)
+```
+
+We map the exponent to a number back into a seperated column. All number and non alfabethic characters are set to a number 1
+```{r echo=TRUE}
+data.storm$CROPDMGEXPN <- 0
+data.storm$CROPDMGEXPN[grep("[?+-012345678]", data.storm$CROPDMGEXP, ignore.case=TRUE)] <- 1
+data.storm$CROPDMGEXPN[grep("[h]", data.storm$CROPDMGEXP, ignore.case=TRUE)] <- 100
+data.storm$CROPDMGEXPN[grep("[k]", data.storm$CROPDMGEXP, ignore.case=TRUE)] <- 1e+03
+data.storm$CROPDMGEXPN[grep("[m]", data.storm$CROPDMGEXP, ignore.case=TRUE)] <- 1e+06
+data.storm$CROPDMGEXPN[grep("[b]", data.storm$CROPDMGEXP, ignore.case=TRUE)] <- 1e+09
+
+data.storm$PROPDMGEXPN <- 0
+data.storm$PROPDMGEXPN[grep("[?+-012345678]", data.storm$PROPDMGEXP, ignore.case=TRUE)] <- 1
+data.storm$PROPDMGEXPN[grep("[h]", data.storm$PROPDMGEXP, ignore.case=TRUE)] <- 100
+data.storm$PROPDMGEXPN[grep("[k]", data.storm$PROPDMGEXP, ignore.case=TRUE)] <- 1e+03
+data.storm$PROPDMGEXPN[grep("[m]", data.storm$PROPDMGEXP, ignore.case=TRUE)] <- 1e+06
+data.storm$PROPDMGEXPN[grep("[b]", data.storm$PROPDMGEXP, ignore.case=TRUE)] <- 1e+09
+```
+
+Now we calculate the damage to crop and property by the exponent number column (...EXPN). Total is stored in (...DMGT)
+```{r echo=TRUE}
+data.storm$CROPDMGT <- data.storm$CROPDMG * data.storm$CROPDMGEXPN
+sum(data.storm$CROPDMGT)
+data.storm$PROPDMGT <- data.storm$PROPDMG * data.storm$PROPDMGEXPN
+sum(data.storm$PROPDMGT)
+```
+
+The total damages to the economy are
+```{r echo=TRUE}
+data.storm$DMGT <- data.storm$CROPDMGT + data.storm$PROPDMGT
+sum(data.storm$DMGT)
+```
+
+Now we calculate the total amount of damages for event types (for crops,property and combined)
+```{r echo=TRUE}
+cropDamages <- with(data.storm, aggregate(CROPDMGT ~ EVTYPE, FUN = sum))
+head(cropDamages[order(-cropDamages$CROPDMGT),])
+propDamages <- with(data.storm, aggregate(PROPDMGT ~ EVTYPE, FUN = sum))
+head(propDamages[order(-propDamages$PROPDMGT),])
+```
+
+
+
+## Results
+Our data processing answers two questions which are described below.
+
+### Most harmfull type of events
+Across the United States, which types of events (as indicated in the 𝙴𝚅𝚃𝚈𝙿𝙴 variable) are most harmful with respect to population health?
+Answer: 
+As we can not determine if a fatality or injury is directlly caused by a event, we need to mention that also indirect causes are included in the calculations.
+
+Here a the number of injuries per event type sorted by higest number. Only the top 10 is displayed.
+```{r echo=TRUE}
+data.injurytype <- data.injuries[order(-data.injuries$x),]
+data.injurytypeTop <- data.injurytype[data.injurytype$x>0,]
+names(data.injurytypeTop) <- c("EventType","Injuries")
+head(data.injurytypeTop, n = 10)
+```
+
+Here a the number of fatalities per event type sorted by higest number. Only the top 10 is displayed.
+```{r echo=TRUE}
+data.fatalitytype <- data.fatalities[order(-data.fatalities$x),]
+data.fatalitytypeTop <- data.fatalitytype[data.fatalitytype$x>0,]
+names(data.fatalitytypeTop) <- c("EventType","Fatalities")
+head(data.fatalitytypeTop, n = 10)
+```
+
+As we can see Tornado's are the primary weather event that causes a harmfull threath to the populations health.
+
+### Greatest economic consequences
+Across the United States, which types of events have the greatest economic consequences?
+
+Based on the combined damages we see that flood and hurricane/typhoon are the two event causing the most economic damages.
+```{r echo=TRUE}
+totalDamages <- with(data.storm, aggregate(DMGT ~ EVTYPE, FUN = sum))
+head(totalDamages[order(-totalDamages$DMGT),])
+```
