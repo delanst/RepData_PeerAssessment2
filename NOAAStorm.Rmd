@@ -141,8 +141,6 @@ propDamages <- with(data.storm, aggregate(PROPDMGT ~ EVTYPE, FUN = sum))
 head(propDamages[order(-propDamages$PROPDMGT),])
 ```
 
-
-
 ## Results
 Our data processing answers two questions which are described below.
 

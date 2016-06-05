@@ -124,7 +124,7 @@ $(document).ready(function () {
 
 <div id="synopsis" class="section level2">
 <h2>Synopsis</h2>
-<p>With this report we analyze the concequences of different weather events on the health of the population and the econcomy in the U.S. The NOAA has monitored data about weather events from 1950 till 2011. This data will be used to do our investigation. In order to determine the health concequences on the population we focus on injuries and fatalities from which we can conclude that Tornado’s and excessive heat are primary cause of fatalities and Tornado’s and TSTM winds for injuries.</p>
+<p>With this report we analyze the concequences of different weather events on the health of the population and the econcomy in the U.S. The NOAA has monitored data about weather events from 1950 till 2011. This data will be used to do our investigation. In order to determine the health concequences on the population we focus on injuries and fatalities from which we can conclude that Tornado’s and excessive heat are primary cause of fatalities and Tornado’s and TSTM winds for injuries. As far as the economic damages go the flood and hurricane are the two events causing the most damages to the economy.</p>
 </div>
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
@@ -328,15 +328,6 @@ head(propDamages[order(-propDamages$PROPDMGT),])</code></pre>
 ## 670       STORM SURGE  43323536000
 ## 153       FLASH FLOOD  16140811860
 ## 244              HAIL  15732267486</code></pre>
-<pre class="r"><code>totalDamages &lt;- with(data.storm, aggregate(DMGT ~ EVTYPE, FUN = sum))
-head(totalDamages[order(-totalDamages$DMGT),])</code></pre>
-<pre><code>##                EVTYPE         DMGT
-## 170             FLOOD 150319678250
-## 411 HURRICANE/TYPHOON  71913712800
-## 834           TORNADO  57352114046
-## 670       STORM SURGE  43323541000
-## 244              HAIL  18758221956
-## 153       FLASH FLOOD  17562128960</code></pre>
 </div>
 </div>
 <div id="results" class="section level2">
@@ -382,6 +373,16 @@ head(data.fatalitytypeTop, n = 10)</code></pre>
 <div id="greatest-economic-consequences" class="section level3">
 <h3>Greatest economic consequences</h3>
 <p>Across the United States, which types of events have the greatest economic consequences?</p>
+<p>Based on the combined damages we see that flood and hurricane/typhoon are the two event causing the most economic damages.</p>
+<pre class="r"><code>totalDamages &lt;- with(data.storm, aggregate(DMGT ~ EVTYPE, FUN = sum))
+head(totalDamages[order(-totalDamages$DMGT),])</code></pre>
+<pre><code>##                EVTYPE         DMGT
+## 170             FLOOD 150319678250
+## 411 HURRICANE/TYPHOON  71913712800
+## 834           TORNADO  57352114046
+## 670       STORM SURGE  43323541000
+## 244              HAIL  18758221956
+## 153       FLASH FLOOD  17562128960</code></pre>
 </div>
 </div>
 
